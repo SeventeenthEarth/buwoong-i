@@ -2,13 +2,13 @@
 
 ## Overview
 
-This project is a Python-based utility that reads all files with specific extensions (currently `dart` or `py`), as well as `Dockerfile` and `docker-compose.yaml/yml`, from a given directory and generates a Markdown (`.md`) document. This Markdown document contains metadata, including a file count and directory tree, as well as the content of each file.
+This project is a Python-based utility that reads all files with specific extensions (currently `dart`, `py`, `sql`), as well as `Dockerfile` and `docker-compose.yaml/yml`, from a given directory and generates a Markdown (`.md`) document. This Markdown document contains metadata, including a file count and directory tree, as well as the content of each file.
 
 The utility is useful for documenting code directories, providing a readable format of the source code within a project, and archiving current states of codebases in a clear, structured manner.
 
 ## Features
 
-- **Supported Extensions**: Reads `.dart`, `.py` files, and also `Dockerfile` and `docker-compose.yaml/yml`.
+- **Supported Extensions**: Reads `.dart`, `.py`, `.sql` files, and also `Dockerfile` and `docker-compose.yaml/yml`.
 - **Metadata Generation**: Generates metadata about the directory, including file counts and a directory structure tree.
 - **Markdown Output**: Produces an output Markdown file with headers, file paths, and code blocks for easy readability.
 - **Custom Title**: Optionally add a title to the output Markdown file, replacing the default directory name in the document header and output filename.
@@ -34,7 +34,7 @@ python main.py DIRECTORY_PATH EXTENSION [--title TITLE]
 
 ### Arguments:
 - `DIRECTORY_PATH`: The path to the directory you wish to scan for files.
-- `EXTENSION`: The file extension to filter files (`dart` or `py`).
+- `EXTENSION`: The file extension to filter files (`dart`, `py`, or `sql`).
 - `--title TITLE`: (Optional) Custom title for the Markdown file. If omitted, the last directory name will be used.
 
 ### Example:
@@ -88,7 +88,6 @@ my_project/
 
 ```py
 # File content here
-```
 ```
 
 ## Error Handling
