@@ -14,6 +14,60 @@ def read_files_in_directory(
     if not os.path.exists(directory):
         raise FileNotFoundError(f"The provided path '{directory}' does not exist.")
 
+    extension_configs = {
+        "common": {
+            "exclude_dir": [".vscode", ".idea", ".githook", ".aider.tags.cache.v3"],
+            "exclude_file": [],
+            "exclude_extension": [],
+            "include_file": ["makefile"],
+        },
+        "python": {
+            "exclude_dir": [".venv", "venv", "__pycache__"],
+            "exclude_file": ["__init__.py"],
+            "exclude_extension": [".pyc"],
+            "include_file": [
+                "dockerfile",
+                "docker-compose.yml",
+                "docker-compose.yaml",
+            ],
+        },
+        "dart": {
+            "exclude_dir": [
+                "ios",
+                "android",
+                "macos",
+                "window",
+                "web",
+                "build",
+                "assets",
+            ],
+            "exclude_file": [],
+            "exclude_extension": [".g.dart", ".gr.dart"],
+            "include_file": ["pubspec.yaml"],
+        },
+        "sql": {
+            "exclude_dir": [],
+            "exclude_file": [],
+            "exclude_extension": [],
+            "include_file": [],
+        },
+    }
+
+    # Map file extension to config key
+    extension_map = {"py": "python", "dart": "dart", "sql": "sql"}
+
+    config_key = extension_map[target_extension]
+    current_config = extension_configs[config_key]
+    common_config = extension_configs["common"]
+
+    # Combine common and specific configs
+    exclude_dirs = set(common_config["exclude_dir"] + current_config["exclude_dir"])
+    exclude_files = set(common_config["exclude_file"] + current_config["exclude_file"])
+    exclude_extensions = set(
+        common_config["exclude_extension"] + current_config["exclude_extension"]
+    )
+    include_files = set(common_config["include_file"] + current_config["include_file"])
+
     # Get absolute path for clarity
     abs_directory = os.path.abspath(directory)
     last_directory = os.path.basename(os.path.normpath(abs_directory))
@@ -27,27 +81,31 @@ def read_files_in_directory(
     # Collect all target files and count them
     target_files = []
     infrastructure_files = []
+
+    def should_include_file(filename: str, t_extension: str) -> bool:
+        # Check if file should be excluded
+        if filename in exclude_files:
+            return False
+
+        # Check if file has excluded extension
+        if any(filename.endswith(ext) for ext in exclude_extensions):
+            return False
+
+        # Include if it's a target extension file or in include_files
+        return filename.endswith(f".{t_extension}") or filename.lower() in include_files
+
     for root, dirs, files in os.walk(abs_directory):
-        # Exclude venv, .venv directories, __init__.py, and cache files
-        dirs[:] = [
-            d
-            for d in dirs
-            if d not in [".venv", "venv", ".idea", ".vscode", "__pycache__"]
-        ]
+        # Filter directories using exclude_dirs
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+
         for file in files:
-            if (
-                file.endswith(f".{target_extension}")
-                and file != "__init__.py"
-                and not file.endswith(".pyc")
-            ):
-                target_files.append(os.path.join(root, file))
-            elif file.lower() in [
-                "dockerfile",
-                "docker-compose.yml",
-                "docker-compose.yaml",
-                "makefile",
-            ]:
-                infrastructure_files.append(os.path.join(root, file))
+            file_path = os.path.join(root, file)
+
+            if should_include_file(file, target_extension):
+                if file.endswith(f".{target_extension}"):
+                    target_files.append(file_path)
+                else:
+                    infrastructure_files.append(file_path)
 
     # Add metadata section with file count and directory tree
     markdown_content += "## Metadata\n\n"
@@ -59,42 +117,28 @@ def read_files_in_directory(
     )
     markdown_content += "```\n"
 
+    # Generate directory tree
     for root, dirs, files in os.walk(abs_directory):
-        # Exclude venv, .venv directories, .idea, .vscode, __init__.py, and cache files
-        dirs[:] = [
-            d
-            for d in dirs
-            if d not in [".venv", "venv", ".idea", ".vscode", "__pycache__"]
-        ]
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+
         level = root.replace(abs_directory, "").count(os.sep)
         indent = " " * 4 * level
         markdown_content += f"{indent}{Path(root).name}/\n"
+
         sub_indent = " " * 4 * (level + 1)
-        for file in files:
-            if (
-                file.endswith(f".{target_extension}")
-                and file != "__init__.py"
-                and not file.endswith(".pyc")
-            ):
-                markdown_content += f"{sub_indent}{file}\n"
-            elif file.lower() in [
-                "dockerfile",
-                "docker-compose.yml",
-                "docker-compose.yaml",
-                "makefile",
-            ]:
-                markdown_content += f"{sub_indent}{file}\n"
+        included_files = [f for f in files if should_include_file(f, target_extension)]
+        for file in sorted(included_files):
+            markdown_content += f"{sub_indent}{file}\n"
+
     markdown_content += "```\n\n"
 
     # Add code section header
     markdown_content += "## Code\n\n"
 
     # Add each file's content
-    for file_path in target_files + infrastructure_files:
+    for file_path in sorted(target_files + infrastructure_files):
         relative_path = os.path.relpath(file_path, abs_directory)
         file_name = Path(file_path).name
-        with open(file_path, "r") as f:
-            file_content = f.read()
 
         # Determine the file extension for code block
         if file_name.lower() == "dockerfile":
@@ -106,15 +150,22 @@ def read_files_in_directory(
         else:
             extension = target_extension
 
-        # Add H3 with file name including internal directory path and code block with the file content
-        markdown_content += f"### {relative_path}\n\n"
-        markdown_content += f"```{extension}\n{file_content}\n```\n\n"
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                file_content = f.read()
+
+            # Add H3 with file name including internal directory path and code block
+            markdown_content += f"### {relative_path}\n\n"
+            markdown_content += f"```{extension}\n{file_content}\n```\n\n"
+        except Exception as e:
+            markdown_content += f"### {relative_path}\n\n"
+            markdown_content += f"Error reading file: {str(e)}\n\n"
 
     return markdown_content
 
 
 def save_markdown(content: str, output_file: str):
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         f.write(content)
 
 
