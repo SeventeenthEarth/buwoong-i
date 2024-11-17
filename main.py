@@ -1,12 +1,17 @@
-from typing import Union
+from typing import Union, Dict, Any
 import os
 import datetime
 from pathlib import Path
 import typer
 
+from project_config import ProjectConfig
+
 
 def read_files_in_directory(
-    directory: Union[str, os.PathLike], target_extension: str, title: str = None
+    directory: Union[str, os.PathLike],
+    target_extension: str,
+    title: str = None,
+    additional_exclude_dirs: list = None,
 ) -> str:
     if target_extension not in ["dart", "py", "sql"]:
         raise ValueError("Only 'dart', 'py', 'sql' file extensions are allowed.")
@@ -16,8 +21,15 @@ def read_files_in_directory(
 
     extension_configs = {
         "common": {
-            "exclude_dir": [".vscode", ".idea", ".githook", ".aider.tags.cache.v3"],
-            "exclude_file": [],
+            "exclude_dir": [
+                ".vscode",
+                ".idea",
+                ".githook",
+                ".aider.tags.cache.v3",
+                ".git",
+                ".githooks",
+            ],
+            "exclude_file": [".gitignore", ".gitkeep"],
             "exclude_extension": [],
             "include_file": ["makefile"],
         },
@@ -40,6 +52,7 @@ def read_files_in_directory(
                 "web",
                 "build",
                 "assets",
+                ".dart_tool",
             ],
             "exclude_file": [],
             "exclude_extension": [".g.dart", ".gr.dart"],
@@ -61,7 +74,11 @@ def read_files_in_directory(
     common_config = extension_configs["common"]
 
     # Combine common and specific configs
-    exclude_dirs = set(common_config["exclude_dir"] + current_config["exclude_dir"])
+    exclude_dirs = set(
+        common_config["exclude_dir"]
+        + current_config["exclude_dir"]
+        + (additional_exclude_dirs or [])
+    )
     exclude_files = set(common_config["exclude_file"] + current_config["exclude_file"])
     exclude_extensions = set(
         common_config["exclude_extension"] + current_config["exclude_extension"]
@@ -82,7 +99,7 @@ def read_files_in_directory(
     target_files = []
     infrastructure_files = []
 
-    def should_include_file(filename: str, t_extension: str) -> bool:
+    def should_include_file(filename: str, extension: str) -> bool:
         # Check if file should be excluded
         if filename in exclude_files:
             return False
@@ -92,7 +109,7 @@ def read_files_in_directory(
             return False
 
         # Include if it's a target extension file or in include_files
-        return filename.endswith(f".{t_extension}") or filename.lower() in include_files
+        return filename.endswith(f".{extension}") or filename.lower() in include_files
 
     for root, dirs, files in os.walk(abs_directory):
         # Filter directories using exclude_dirs
@@ -170,10 +187,23 @@ def save_markdown(content: str, output_file: str):
 
 
 def main(
-    directory: str,
-    extension: str,
-    title: str = typer.Option(None, "--title", help="Title for the markdown output"),
+    input_file: str = typer.Option(
+        None, "--input", "-i", help="YAML configuration file path"
+    ),
 ):
+    """
+    Collect files and generate markdown documentation.
+    Can be run either with command line arguments or with a YAML configuration file.
+    """
+    config = None
+    if input_file:
+        config = ProjectConfig.from_yaml(input_file)
+        directory = config.path
+        extension = config.extension
+        title = config.title
+    else:
+        raise typer.BadParameter("Please provide a YAML configuration file.")
+
     # Generate timestamp for the output file
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     last_directory = os.path.basename(os.path.normpath(directory))
@@ -184,7 +214,10 @@ def main(
     output_file = os.path.join(output_directory, f"{output_file_title}_{timestamp}.md")
 
     try:
-        markdown_content = read_files_in_directory(directory, extension, title)
+        additional_exclude_dirs = config.exclude_dir if config else None
+        markdown_content = read_files_in_directory(
+            directory, extension, title, additional_exclude_dirs
+        )
         save_markdown(markdown_content, output_file)
         print(f"Markdown file '{output_file}' created successfully.")
     except (ValueError, FileNotFoundError) as e:

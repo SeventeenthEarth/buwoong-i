@@ -1,0 +1,8 @@
+title: Dolphin
+extension: dart
+path: /Users/draccoon/Workspace/Dart/dolphin2/
+exclude_dir:
+  - setup
+  - integration_test
+  - test
+  - test_server
