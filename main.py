@@ -10,6 +10,17 @@ from extension_configs import EXTENSION_CONFIGS, EXTENSION_MAP
 
 
 def validate_inputs(directory: Union[str, os.PathLike], target_extension: str) -> None:
+    """
+    Validates the input directory and target file extension.
+
+    Parameters:
+    directory (Union[str, os.PathLike]): The directory to search for files.
+    target_extension (str): The target file extension to filter files.
+
+    Raises:
+    ValueError: If the target_extension is not one of 'dart', 'py', or 'sql'.
+    FileNotFoundError: If the provided directory does not exist.
+    """
     if target_extension not in ["dart", "py", "sql"]:
         raise ValueError("Only 'dart', 'py', 'sql' file extensions are allowed.")
 
@@ -20,6 +31,16 @@ def validate_inputs(directory: Union[str, os.PathLike], target_extension: str) -
 def get_file_config(
     target_extension: str, additional_exclude_dirs: List[str] = None
 ) -> FileConfig:
+    """
+    Retrieves the file configuration based on the target file extension and any additional directories to exclude.
+
+    Parameters:
+    target_extension (str): The target file extension.
+    additional_exclude_dirs (List[str], optional): Additional directories to exclude.
+
+    Returns:
+    FileConfig: The file configuration object.
+    """
     config_key = EXTENSION_MAP[target_extension]
     current_config = EXTENSION_CONFIGS[config_key]
     common_config = EXTENSION_CONFIGS["common"]
@@ -43,6 +64,17 @@ def get_file_config(
 
 
 def should_include_file(filename: str, extension: str, config: FileConfig) -> bool:
+    """
+    Determines whether a given file should be included based on its name and the configuration.
+
+    Parameters:
+    filename (str): The name of the file.
+    extension (str): The target file extension.
+    config (FileConfig): The file configuration object.
+
+    Returns:
+    bool: True if the file should be included, False otherwise.
+    """
     if filename in config.exclude_files:
         return False
 
@@ -57,6 +89,17 @@ def should_include_file(filename: str, extension: str, config: FileConfig) -> bo
 def collect_files(
     directory: str, target_extension: str, config: FileConfig
 ) -> Tuple[List[str], List[str]]:
+    """
+    Collects files from the given directory based on the target extension and configuration.
+
+    Parameters:
+    directory (str): The directory to search for files.
+    target_extension (str): The target file extension.
+    config (FileConfig): The file configuration object.
+
+    Returns:
+    Tuple[List[str], List[str]]: A tuple containing a list of target files and infrastructure files.
+    """
     target_files = []
     infrastructure_files = []
     abs_directory = os.path.abspath(directory)
@@ -83,6 +126,19 @@ def generate_metadata_section(
     target_extension: str,
     config: FileConfig,
 ) -> str:
+    """
+    Generates the metadata section of the markdown content.
+
+    Parameters:
+    abs_directory (str): The absolute directory path.
+    target_files (List[str]): The list of target files.
+    infrastructure_files (List[str]): The list of infrastructure files.
+    target_extension (str): The target file extension.
+    config (FileConfig): The file configuration object.
+
+    Returns:
+    str: The metadata section of the markdown content.
+    """
     content = "## Metadata\n\n"
     content += f"- Total number of '{target_extension}' files: {len(target_files)}\n"
     content += (
@@ -111,6 +167,17 @@ def generate_metadata_section(
 def generate_code_section(
     abs_directory: str, files: List[str], target_extension: str
 ) -> str:
+    """
+    Generates the code section of the markdown content.
+
+    Parameters:
+    abs_directory (str): The absolute directory path.
+    files (List[str]): The list of files.
+    target_extension (str): The target file extension.
+
+    Returns:
+    str: The code section of the markdown content.
+    """
     content = "## Code\n\n"
 
     for file_path in sorted(files):
@@ -131,6 +198,16 @@ def generate_code_section(
 
 
 def get_file_extension(file_name: str, target_extension: str) -> str:
+    """
+    Determines the language extension for code blocks based on the file name and target extension.
+
+    Parameters:
+    file_name (str): The name of the file.
+    target_extension (str): The target file extension.
+
+    Returns:
+    str: The language extension for code blocks.
+    """
     if file_name.lower() == "dockerfile":
         return "docker"
     elif file_name.lower() in ["docker-compose.yml", "docker-compose.yaml"]:
@@ -146,6 +223,18 @@ def read_files_in_directory(
     title: str = None,
     additional_exclude_dirs: list = None,
 ) -> str:
+    """
+    Reads files from the given directory and generates markdown documentation.
+
+    Parameters:
+    directory (Union[str, os.PathLike]): The directory to search for files.
+    target_extension (str): The target file extension.
+    title (str, optional): The title for the markdown document.
+    additional_exclude_dirs (list, optional): Additional directories to exclude.
+
+    Returns:
+    str: The generated markdown content.
+    """
     # Validate inputs
     validate_inputs(directory, target_extension)
 
@@ -173,6 +262,13 @@ def read_files_in_directory(
 
 
 def save_markdown(content: str, output_file: str):
+    """
+    Saves the provided markdown content to a file.
+
+    Parameters:
+    content (str): The markdown content to save.
+    output_file (str): The path to the output file.
+    """
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(content)
 
@@ -183,8 +279,11 @@ def main(
     ),
 ):
     """
-    Collect files and generate markdown documentation.
+    Collects files and generates markdown documentation.
     Can be run either with command line arguments or with a YAML configuration file.
+
+    Parameters:
+    input_file (str): YAML configuration file path.
     """
     if not input_file:
         raise typer.BadParameter("Please provide a YAML configuration file.")
