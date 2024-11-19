@@ -1,4 +1,6 @@
-# Owl 🦉
+# Buwoong-i 🦉
+
+> The name "Buwoong-i" (부엉이) is the Korean word for owl.
 
 ## Overview
 
