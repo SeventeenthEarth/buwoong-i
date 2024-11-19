@@ -15,7 +15,7 @@ EXTENSION_CONFIGS = {
         "include_file": ["makefile"],
     },
     "python": {
-        "exclude_dir": [".venv", "venv", "__pycache__"],
+        "exclude_dir": [".venv", "venv", "__pycache__", ".mypy_cache"],
         "exclude_file": ["__init__.py"],
         "exclude_extension": [".pyc"],
         "include_file": [
