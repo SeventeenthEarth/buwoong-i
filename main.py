@@ -1,4 +1,4 @@
-from typing import Union, Dict, Any, Set, List, Tuple
+from typing import Union, List, Tuple, Optional, Dict, Any
 import os
 import datetime
 from pathlib import Path
@@ -29,7 +29,7 @@ def validate_inputs(directory: Union[str, os.PathLike], target_extension: str) -
 
 
 def get_file_config(
-    target_extension: str, additional_exclude_dirs: List[str] = None
+    target_extension: str, additional_exclude_dirs: Optional[List[str]] = None
 ) -> FileConfig:
     """
     Retrieves the file configuration based on the target file extension and any additional directories to exclude.
@@ -43,7 +43,7 @@ def get_file_config(
     """
     config_key = EXTENSION_MAP[target_extension]
     current_config = EXTENSION_CONFIGS[config_key]
-    common_config = EXTENSION_CONFIGS["common"]
+    common_config : Dict[str, Any] = EXTENSION_CONFIGS["common"]
 
     return FileConfig(
         exclude_dirs=set(
@@ -87,7 +87,7 @@ def should_include_file(filename: str, extension: str, config: FileConfig) -> bo
 
 
 def collect_files(
-    directory: str, target_extension: str, config: FileConfig
+    directory: Union[str, os.PathLike], target_extension: str, config: FileConfig
 ) -> Tuple[List[str], List[str]]:
     """
     Collects files from the given directory based on the target extension and configuration.
@@ -220,8 +220,8 @@ def get_file_extension(file_name: str, target_extension: str) -> str:
 def read_files_in_directory(
     directory: Union[str, os.PathLike],
     target_extension: str,
-    title: str = None,
-    additional_exclude_dirs: list = None,
+    title: Optional[str] = None,
+    additional_exclude_dirs: Optional[list] = None,
 ) -> str:
     """
     Reads files from the given directory and generates markdown documentation.

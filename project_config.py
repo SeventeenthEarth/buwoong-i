@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from typing import Optional
+
 import yaml
 
 
@@ -6,8 +8,8 @@ import yaml
 class ProjectConfig:
     path: str
     extension: str
-    title: str = None
-    exclude_dir: list = None
+    title: str
+    exclude_dir: list
 
     @classmethod
     def from_yaml(cls, yaml_path: str) -> "ProjectConfig":

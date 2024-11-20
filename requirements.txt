@@ -12,4 +12,5 @@ PyYAML==6.0.2
 rich==13.9.4
 shellingham==1.5.4
 typer==0.13.0
+types-PyYAML==6.0.12.20240917
 typing_extensions==4.12.2

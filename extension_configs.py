@@ -1,6 +1,6 @@
-# extension_configs.py
+from typing import Dict, Any
 
-EXTENSION_CONFIGS = {
+EXTENSION_CONFIGS : Dict[str, Any] = {
     "common": {
         "exclude_dir": [
             ".vscode",
