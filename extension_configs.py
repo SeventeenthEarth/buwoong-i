@@ -10,7 +10,7 @@ EXTENSION_CONFIGS : Dict[str, Any] = {
             ".git",
             ".githooks",
         ],
-        "exclude_file": [".gitignore", ".gitkeep"],
+        "exclude_file": [".gitignore", ".gitkeep", ".env", "template.env"],
         "exclude_extension": [],
         "include_file": ["makefile"],
     },
