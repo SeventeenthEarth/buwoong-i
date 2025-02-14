@@ -293,7 +293,7 @@ def main(
     # Generate timestamp for the output file
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     last_directory = os.path.basename(os.path.normpath(config.path))
-    output_directory = "output"
+    output_directory = "buwoong-i_output"
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
 
